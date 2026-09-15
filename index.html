@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ECEEEA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15191C" media="(prefers-color-scheme: dark)">
+<title>TWC Recall Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ECEEEA;
+    --surface: #FFFFFF;
+    --ink: #1A1F24;
+    --muted: #56606A;
+    --line: #C3C9CE;
+    --accent: #1E6B45;
+    --accent-ink: #FFFFFF;
+    --warn: #8A5300;
+    --warn-bg: #FFF3DC;
+    --focus: #1E6B45;
+    --radius: 10px;
+    --font: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-head: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15191C;
+      --surface: #1F2428;
+      --ink: #E9ECEE;
+      --muted: #9AA4AD;
+      --line: #3A4248;
+      --accent: #4FB482;
+      --accent-ink: #0C1A12;
+      --warn: #F2B45A;
+      --warn-bg: #33270F;
+      --focus: #4FB482;
+    }
+  }
+
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 17px;
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Header */
+  .top {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  }
+  .top-inner {
+    max-width: 560px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .top h1 {
+    font-family: var(--font-head); font-weight: 700;
+    font-size: 26px; line-height: 1.1; margin: 0; letter-spacing: -0.01em;
+  }
+  .top .sub { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
+  .btn-clear {
+    font: inherit; font-size: 15px; font-weight: 600;
+    color: var(--ink); background: transparent;
+    border: 1.5px solid var(--line); border-radius: var(--radius);
+    padding: 8px 12px; min-height: 40px; cursor: pointer; white-space: nowrap;
+  }
+
+  main { max-width: 560px; margin: 0 auto; padding: 8px 16px 24px; }
+
+  .banner {
+    background: var(--warn-bg); color: var(--ink);
+    border-left: 4px solid var(--warn);
+    border-radius: 6px; padding: 10px 12px; margin: 12px 0 4px;
+    display: flex; gap: 10px; align-items: center; justify-content: space-between;
+    font-size: 15px;
+  }
+  .banner button { font: inherit; font-weight: 600; font-size: 15px; background: none; border: 0; color: var(--ink); text-decoration: underline; cursor: pointer; padding: 6px; }
+
+  /* Fields */
+  .field { border: 0; margin: 0; padding: 18px 0 0; min-width: 0; }
+  .field + .field { border-top: 1px solid var(--line); margin-top: 18px; }
+  label.lbl, legend {
+    display: block; padding: 0; margin: 0 0 8px;
+    font-family: var(--font-head); font-weight: 600; font-size: 19px; line-height: 1.2;
+  }
+  .opt { font-family: var(--font); font-weight: 400; font-size: 15px; color: var(--muted); }
+  input[type="text"], input[type="date"], select, textarea {
+    width: 100%; font: inherit; font-size: 17px; color: var(--ink);
+    background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+    padding: 12px; min-height: 50px; appearance: none; -webkit-appearance: none;
+  }
+  input[type="date"] { display: block; }
+  input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+  textarea { min-height: 88px; resize: vertical; }
+  select {
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 22px, calc(100% - 14px) 22px;
+    background-size: 6px 6px; background-repeat: no-repeat; padding-right: 36px;
+  }
+  input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
+    outline: 3px solid var(--focus); outline-offset: 2px;
+  }
+  [aria-invalid="true"] { border-color: var(--warn) !important; }
+  .hint { color: var(--muted); font-size: 15px; margin: 6px 0 0; }
+  .warn { color: var(--warn); font-size: 15px; font-weight: 600; margin: 6px 0 0; }
+
+  /* Yes / No */
+  .seg { position: relative; display: grid; grid-template-columns: 1fr 1fr; border: 1.5px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label { display: block; text-align: center; padding: 13px 8px; font-weight: 600; cursor: pointer; user-select: none; }
+  .seg label + input + label { border-left: 1.5px solid var(--line); }
+  .seg input:checked + label { background: var(--ink); color: var(--surface); }
+  .seg input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: -3px; }
+
+  /* Address suggestions */
+  .combo { position: relative; }
+  .suggest {
+    position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20;
+    list-style: none; margin: 0; padding: 4px 0;
+    background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  }
+  .suggest li { padding: 10px 12px; cursor: pointer; line-height: 1.25; }
+  .suggest li .main { display: block; font-weight: 600; }
+  .suggest li .second { display: block; color: var(--muted); font-size: 14px; }
+  .suggest li[aria-selected="true"], .suggest li:hover { background: var(--bg); }
+  .suggest .attrib { cursor: default; font-size: 12px; color: var(--muted); text-align: right; padding: 4px 12px 6px; }
+  .suggest .attrib:hover { background: none; }
+
+  /* Preview */
+  details.preview { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 14px; }
+  details.preview summary { cursor: pointer; font-family: var(--font-head); font-weight: 600; font-size: 19px; }
+  .msg {
+    margin-top: 10px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+    padding: 12px; font-size: 15px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+
+  /* Sticky action */
+  .action {
+    position: sticky; bottom: 0; z-index: 10;
+    background: var(--bg); border-top: 1px solid var(--line);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  }
+  .action-inner { max-width: 560px; margin: 0 auto; }
+  .btn-primary {
+    width: 100%; min-height: 56px; font-family: var(--font-head); font-weight: 700; font-size: 21px;
+    color: var(--accent-ink); background: var(--accent); border: 0; border-radius: var(--radius); cursor: pointer;
+  }
+  .btn-primary:active { transform: translateY(1px); }
+  .action .hint { text-align: center; margin-top: 8px; font-size: 14px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; left: 16px; right: 16px; bottom: calc(118px + env(safe-area-inset-bottom)); z-index: 30;
+    max-width: 528px; margin: 0 auto;
+    background: var(--ink); color: var(--surface); border-radius: var(--radius);
+    padding: 12px 14px; font-size: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  }
+  .toast a { color: inherit; font-weight: 600; }
+
+  /* Dialogs */
+  dialog {
+    width: min(92vw, 480px); border: 0; border-radius: 14px; padding: 18px;
+    background: var(--surface); color: var(--ink);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.45); }
+  dialog h2 { font-family: var(--font-head); font-weight: 700; font-size: 23px; margin: 0 0 10px; }
+  dialog ul { margin: 0 0 16px; padding-left: 20px; }
+  dialog li { margin: 4px 0; }
+  dialog li.missing { color: var(--ink); }
+  dialog li.check { color: var(--warn); font-weight: 600; }
+  dialog textarea { min-height: 170px; font-size: 14px; margin-bottom: 14px; }
+  .dlg-actions { display: flex; gap: 10px; }
+  .dlg-actions > * {
+    flex: 1; min-height: 50px; font: inherit; font-weight: 600; border-radius: var(--radius); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; text-decoration: none;
+  }
+  .btn-secondary { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn-go { background: var(--accent); color: var(--accent-ink); border: 0; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div>
+      <h1>Recall log</h1>
+      <p class="sub">For the #recalls channel</p>
+    </div>
+    <button type="button" class="btn-clear" id="clearBtn">Clear form</button>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="staleBanner" hidden>
+    <span id="staleText"></span>
+    <button type="button" id="staleClear">Clear form</button>
+  </div>
+
+  <form id="form" autocomplete="off" novalidate>
+    <div class="field">
+      <label class="lbl" for="date">Recall date</label>
+      <input type="date" id="date" name="date">
+      <p class="warn" data-for="date" hidden></p>
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="address">Address</label>
+      <div class="combo">
+        <input type="text" id="address" name="address" placeholder="Start typing the street address"
+               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="addrList"
+               autocapitalize="words" spellcheck="false">
+        <ul class="suggest" id="addrList" role="listbox" hidden></ul>
+      </div>
+      <p class="hint" id="addrHint">Pick a suggestion to fill in street and city.</p>
+      <p class="warn" data-for="address" hidden></p>
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="job">Original job #</label>
+      <input type="text" id="job" name="job" inputmode="numeric" placeholder="e.g. 4001">
+      <p class="warn" data-for="job" hidden></p>
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="jobDate">Original job date <span class="opt">optional</span></label>
+      <input type="date" id="jobDate" name="jobDate">
+      <p class="hint" id="warrantyHint"></p>
+      <p class="warn" data-for="jobDate" hidden></p>
+    </div>
+
+    <fieldset class="field">
+      <legend>In warranty?</legend>
+      <div class="seg">
+        <input type="radio" id="warrantyY" name="warranty" value="Y"><label for="warrantyY">Yes</label>
+        <input type="radio" id="warrantyN" name="warranty" value="N"><label for="warrantyN">No</label>
+      </div>
+      <p class="warn" data-for="warranty" hidden></p>
+    </fieldset>
+
+    <div class="field">
+      <label class="lbl" for="inspector">Inspector responding</label>
+      <select id="inspector" name="inspector"></select>
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="reason">Reason for recall</label>
+      <textarea id="reason" name="reason" rows="3" placeholder="What the customer reported"></textarea>
+    </div>
+
+    <fieldset class="field">
+      <legend>TWC error?</legend>
+      <div class="seg">
+        <input type="radio" id="twcY" name="twcError" value="Y"><label for="twcY">Yes</label>
+        <input type="radio" id="twcN" name="twcError" value="N"><label for="twcN">No</label>
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <label class="lbl" for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="3" placeholder="What you found and what was done"></textarea>
+      <p class="hint">Added to the end of the TWC error line.</p>
+      <p class="warn" data-for="notes" hidden></p>
+    </div>
+
+    <details class="preview">
+      <summary>Preview message</summary>
+      <div class="msg" id="preview"></div>
+    </details>
+  </form>
+</main>
+
+<div class="action">
+  <div class="action-inner">
+    <button type="button" class="btn-primary" id="copyBtn">Copy &amp; open Slack</button>
+    <p class="hint">Paste into #recalls, add photos, then send.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<dialog id="issuesDlg" aria-labelledby="issuesTitle">
+  <h2 id="issuesTitle">Check before copying</h2>
+  <ul id="issuesList"></ul>
+  <div class="dlg-actions">
+    <button type="button" class="btn-secondary" id="issuesBack">Go back</button>
+    <button type="button" class="btn-go" id="issuesCopy">Copy anyway</button>
+  </div>
+</dialog>
+
+<dialog id="manualDlg" aria-labelledby="manualTitle">
+  <h2 id="manualTitle">Copy didn't work</h2>
+  <p class="hint" style="margin:0 0 10px">Press and hold the text below, choose Select All, then Copy.</p>
+  <textarea id="manualText" readonly></textarea>
+  <div class="dlg-actions">
+    <button type="button" class="btn-secondary" id="manualClose">Close</button>
+    <a class="btn-go" id="manualOpen" href="#" target="_blank" rel="noopener">Open #recalls</a>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ===================== SETTINGS ===================== */
+  const CONFIG = {
+    // Google Maps Platform key. Restrict it by website + API in Google Cloud.
+    GOOGLE_API_KEY: "PASTE_GOOGLE_API_KEY_HERE",
+
+    // Slack
+    SLACK_WORKSPACE_URL: "https://thomaswildlifecontrol.slack.com",
+    SLACK_CHANNEL_ID: "C0B0NPJ6D50",          // #recalls
+    SLACK_TEAM_ID: "",                         // optional, starts with T. Lets phones jump straight into the Slack app.
+
+    INSPECTORS: ["Justin Barker", "Brandon Thomas"],
+    WARRANTY_YEARS: 2,
+    OLD_DATE_DAYS: 45,                         // warn if recall date is older than this
+
+    // Bias address suggestions toward the Sacramento region (~60 km radius)
+    LOCATION_BIAS: { center: { lat: 38.65, lng: -121.25 }, radius: 60000 }
+  };
+  /* ==================================================== */
+
+  const STORE_KEY = "twc-recall-form-v1";
+  const INSPECTOR_KEY = "twc-recall-inspector";
+
+  const $ = (id) => document.getElementById(id);
+  const form = $("form");
+  const els = {
+    date: $("date"), address: $("address"), job: $("job"), jobDate: $("jobDate"),
+    inspector: $("inspector"), reason: $("reason"), notes: $("notes")
+  };
+
+  const state = {
+    addressPicked: false,
+    warrantyManual: false,
+    startedOn: todayISO(),
+    hasContent: false,
+    attempted: false,
+    touched: new Set()
+  };
+
+  /* ---------- storage ---------- */
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function load(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+
+  /* ---------- dates ---------- */
+  function todayISO() {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+  }
+  function parseISO(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+  function fmtShort(s) { if (!s) return ""; const [y, m, d] = s.split("-").map(Number); return `${m}/${d}/${String(y).slice(-2)}`; }
+
+  /* ---------- form read/write ---------- */
+  function radioVal(name) { const r = form.querySelector(`input[name="${name}"]:checked`); return r ? r.value : ""; }
+  function setRadio(name, val) { form.querySelectorAll(`input[name="${name}"]`).forEach(r => { r.checked = (r.value === val); }); }
+
+  function readForm() {
+    return {
+      date: els.date.value, address: els.address.value, job: els.job.value, jobDate: els.jobDate.value,
+      warranty: radioVal("warranty"), inspector: els.inspector.value, reason: els.reason.value,
+      twcError: radioVal("twcError"), notes: els.notes.value,
+      addressPicked: state.addressPicked, warrantyManual: state.warrantyManual, startedOn: state.startedOn
+    };
+  }
+
+  function writeForm(d) {
+    els.date.value = d.date || todayISO();
+    els.address.value = d.address || "";
+    els.job.value = d.job || "";
+    els.jobDate.value = d.jobDate || "";
+    setRadio("warranty", d.warranty || "");
+    const insp = d.inspector || load(INSPECTOR_KEY) || CONFIG.INSPECTORS[0];
+    els.inspector.value = CONFIG.INSPECTORS.includes(insp) ? insp : CONFIG.INSPECTORS[0];
+    els.reason.value = d.reason || "";
+    setRadio("twcError", d.twcError || "");
+    els.notes.value = d.notes || "";
+  }
+
+  function hasContent() {
+    const f = readForm();
+    return !!(f.address.trim() || f.job.trim() || f.jobDate || f.reason.trim() || f.notes.trim() || f.warranty || f.twcError);
+  }
+
+  function save() { store(STORE_KEY, readForm()); }
+
+  function resetForm() {
+    writeForm({});
+    state.addressPicked = false;
+    state.warrantyManual = false;
+    state.startedOn = todayISO();
+    state.hasContent = false;
+    state.attempted = false;
+    state.touched.clear();
+    sessionToken = null;
+    closeList();
+    save();
+    render();
+    window.scrollTo({ top: 0 });
+  }
+
+  /* ---------- warranty ---------- */
+  function warrantyInfo(f) {
+    if (!f.jobDate || !f.date) return null;
+    const job = parseISO(f.jobDate), rec = parseISO(f.date);
+    if (job > rec) return { error: true };
+    const end = new Date(job); end.setFullYear(end.getFullYear() + CONFIG.WARRANTY_YEARS);
+    let months = (rec.getFullYear() - job.getFullYear()) * 12 + (rec.getMonth() - job.getMonth());
+    if (rec.getDate() < job.getDate()) months -= 1;
+    return { inW: rec <= end, years: Math.floor(months / 12), months: months % 12 };
+  }
+
+  function applyAutoWarranty() {
+    const info = warrantyInfo(readForm());
+    if (info && !info.error) {
+      setRadio("warranty", info.inW ? "Y" : "N");
+      state.warrantyManual = false;
+    }
+  }
+
+  /* ---------- checks ---------- */
+  const REQUIRED = [
+    ["date", "Recall date"], ["address", "Address"], ["job", "Original job #"], ["warranty", "In warranty?"],
+    ["inspector", "Inspector responding"], ["reason", "Reason for recall"], ["twcError", "TWC error?"]
+  ];
+
+  function missing(f) { return REQUIRED.filter(([k]) => !String(f[k] || "").trim()).map(([, label]) => label); }
+
+  function checks(f) {
+    const w = {};
+    if (f.date) {
+      const diff = Math.round((parseISO(todayISO()) - parseISO(f.date)) / 86400000);
+      if (diff < 0) w.date = "This date is in the future.";
+      else if (diff > CONFIG.OLD_DATE_DAYS) w.date = `This date is ${diff} days ago. Check the year.`;
+    }
+    if (f.address.trim() && !f.address.includes(",")) w.address = 'No city found. Pick a suggestion or add ", City".';
+    const job = f.job.trim().replace(/^#\s*/, "");
+    if (job && !/^\d+$/.test(job)) w.job = "Job # should be numbers only. Is that a customer name?";
+    const info = warrantyInfo(f);
+    if (info && info.error) w.jobDate = "Original job date is after the recall date.";
+    else if (info && f.warranty && f.warranty !== (info.inW ? "Y" : "N")) {
+      w.warranty = `The dates say ${info.inW ? "in" : "out of"} warranty, but ${f.warranty === "Y" ? "Yes" : "No"} is selected.`;
+    }
+    if (f.twcError === "Y" && !f.notes.trim()) w.notes = "TWC error is Yes. Add a note on what went wrong.";
+    return w;
+  }
+
+  /* ---------- message ---------- */
+  function oneLine(s) { return s.trim().replace(/\s*\n+\s*/g, " "); }
+
+  function buildMessage(f) {
+    const notes = oneLine(f.notes);
+    const twc = f.twcError ? (notes ? `${f.twcError} — ${notes}` : f.twcError) : "";
+    return [
+      `*Date:* ${fmtShort(f.date)} | *Address:* ${f.address.trim()}`,
+      `*Original Job #:* ${f.job.trim().replace(/^#\s*/, "")}`,
+      `*In Warranty? (Y/N):* ${f.warranty}`,
+      `*Inspector responding:* ${f.inspector}`,
+      `*Reason for recall:* ${oneLine(f.reason)}`,
+      `*TWC Error? (Y/N + notes):* ${twc}`
+    ].join("\n");
+  }
+
+  function esc(s) { return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+  /* ---------- render ---------- */
+  function render() {
+    const f = readForm();
+
+    // warranty hint
+    const info = warrantyInfo(f);
+    const hint = $("warrantyHint");
+    if (!f.jobDate) hint.textContent = "Add it and warranty fills in for you.";
+    else if (!info || info.error) hint.textContent = "";
+    else {
+      hint.textContent = `${info.years} yr ${info.months} mo since the original job. ${info.inW ? "In" : "Out of"} warranty.` +
+        (state.warrantyManual ? " Warranty was changed by hand." : "");
+    }
+
+    // inline warnings
+    const w = checks(f);
+    form.querySelectorAll(".warn[data-for]").forEach(p => {
+      const key = p.dataset.for;
+      const show = w[key] && (state.attempted || state.touched.has(key));
+      p.hidden = !show;
+      p.textContent = show ? w[key] : "";
+    });
+
+    // missing highlights after an attempt
+    const missKeys = state.attempted ? REQUIRED.filter(([k]) => !String(f[k] || "").trim()).map(([k]) => k) : [];
+    ["date", "address", "job", "inspector", "reason"].forEach(k => {
+      els[k].setAttribute("aria-invalid", missKeys.includes(k) || (state.attempted && w[k]) ? "true" : "false");
+    });
+
+    // preview
+    const html = esc(buildMessage(f)).replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>");
+    $("preview").innerHTML = html;
+
+    // stale banner
+    const stale = state.hasContent && state.startedOn !== todayISO();
+    $("staleBanner").hidden = !stale;
+    if (stale) $("staleText").textContent = `This form has a recall started on ${fmtShort(state.startedOn)}. If it's already posted, clear it.`;
+  }
+
+  /* ---------- events ---------- */
+  function onChange(e) {
+    const t = e.target;
+    if (t === els.date || t === els.jobDate) {
+      applyAutoWarranty();
+      if (e.type === "change") state.touched.add(t.id);
+    }
+    if (t.name === "warranty") {
+      state.touched.add("warranty");
+      const info = warrantyInfo(readForm());
+      state.warrantyManual = !!(info && !info.error && (info.inW ? "Y" : "N") !== t.value);
+    }
+    if (t.name === "twcError") state.touched.add("notes");
+    if (t === els.inspector) store(INSPECTOR_KEY, els.inspector.value);
+
+    const nowContent = hasContent();
+    if (!state.hasContent && nowContent) state.startedOn = todayISO();
+    state.hasContent = nowContent;
+
+    save();
+    render();
+  }
+
+  form.addEventListener("input", onChange);
+  form.addEventListener("change", onChange);
+  form.addEventListener("focusout", (e) => {
+    if (e.target.id && e.target !== els.address) { state.touched.add(e.target.id); render(); }
+  });
+  form.addEventListener("submit", (e) => e.preventDefault());
+  window.addEventListener("pagehide", save);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); else render(); });
+
+  function confirmClear() {
+    if (!hasContent() || window.confirm("Clear everything in this form?")) resetForm();
+  }
+  $("clearBtn").addEventListener("click", confirmClear);
+  $("staleClear").addEventListener("click", confirmClear);
+
+  /* ---------- copy + Slack ---------- */
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  function webSlackUrl() { return `${CONFIG.SLACK_WORKSPACE_URL}/archives/${CONFIG.SLACK_CHANNEL_ID}`; }
+  function slackUrl() {
+    if (isMobile && CONFIG.SLACK_TEAM_ID) return `slack://channel?team=${CONFIG.SLACK_TEAM_ID}&id=${CONFIG.SLACK_CHANNEL_ID}`;
+    return webSlackUrl();
+  }
+
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+    } catch (e) { /* fall through */ }
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", "");
+    ta.style.position = "fixed"; ta.style.top = "0"; ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, text.length);
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    ta.remove();
+    return ok;
+  }
+
+  let toastTimer = null;
+  function showToast(html, ms = 9000) {
+    const t = $("toast");
+    t.innerHTML = html; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, ms);
+  }
+
+  async function doCopy() {
+    const text = buildMessage(readForm());
+    const ok = await copyText(text);
+    if (!ok) {
+      $("manualText").value = text;
+      $("manualOpen").href = webSlackUrl();
+      $("manualDlg").showModal();
+      $("manualText").select();
+      return;
+    }
+    showToast(`Copied. Paste into #recalls, add photos, then send. <a href="${esc(webSlackUrl())}" target="_blank" rel="noopener">Open #recalls</a>`);
+    const url = slackUrl();
+    if (isMobile) {
+      window.location.href = url;
+    } else {
+      const w = window.open(url, "_blank");
+      if (w) w.opener = null;
+    }
+  }
+
+  $("copyBtn").addEventListener("click", () => {
+    const f = readForm();
+    const miss = missing(f);
+    const warns = Object.values(checks(f));
+    if (miss.length || warns.length) {
+      state.attempted = true;
+      render();
+      const list = $("issuesList");
+      list.innerHTML = "";
+      miss.forEach(m => { const li = document.createElement("li"); li.className = "missing"; li.textContent = `${m} is empty`; list.appendChild(li); });
+      warns.forEach(m => { const li = document.createElement("li"); li.className = "check"; li.textContent = m; list.appendChild(li); });
+      $("issuesDlg").showModal();
+      return;
+    }
+    doCopy();
+  });
+  $("issuesBack").addEventListener("click", () => $("issuesDlg").close());
+  $("issuesCopy").addEventListener("click", () => { $("issuesDlg").close(); doCopy(); });
+  $("manualClose").addEventListener("click", () => $("manualDlg").close());
+
+  /* ---------- Google Places autocomplete (session tokens) ---------- */
+  let places = null;
+  let sessionToken = null, tokenBorn = 0;
+  let debounceT = null, reqSeq = 0;
+  let suggestions = [], activeIdx = -1;
+  const list = $("addrList");
+  const addrHint = $("addrHint");
+  const TOKEN_MAX_AGE = 3 * 60 * 1000; // start a fresh session if one sits idle this long
+
+  function placesOff(msg) {
+    places = null;
+    closeList();
+    addrHint.textContent = msg || "Address suggestions are off. Type street, city.";
+  }
+
+  function loadGoogle() {
+    const key = CONFIG.GOOGLE_API_KEY;
+    if (!key || key.startsWith("PASTE_")) { placesOff("Address suggestions are off (no API key yet). Type street, city."); return; }
+    window.gm_authFailure = () => placesOff("Address suggestions are off: Google rejected the API key. Type street, city.");
+    window.__twcPlacesReady = async () => {
+      try { places = await google.maps.importLibrary("places"); }
+      catch (e) { placesOff(); }
+    };
+    const s = document.createElement("script");
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&loading=async&callback=__twcPlacesReady`;
+    s.async = true;
+    s.onerror = () => placesOff("Address suggestions couldn't load. Type street, city.");
+    document.head.appendChild(s);
+  }
+
+  function getToken() {
+    if (!sessionToken || Date.now() - tokenBorn > TOKEN_MAX_AGE) {
+      sessionToken = new places.AutocompleteSessionToken();
+      tokenBorn = Date.now();
+    }
+    return sessionToken;
+  }
+
+  els.address.addEventListener("input", () => {
+    state.addressPicked = false;
+    clearTimeout(debounceT);
+    const q = els.address.value.trim();
+    if (!places || q.length < 3) { closeList(); return; }
+    debounceT = setTimeout(() => fetchSuggestions(q), 300);
+  });
+
+  async function fetchSuggestions(q) {
+    const seq = ++reqSeq;
+    try {
+      const { suggestions: res } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: q,
+        sessionToken: getToken(),
+        includedRegionCodes: ["us"],
+        locationBias: CONFIG.LOCATION_BIAS,
+        language: "en-US",
+        region: "us"
+      });
+      if (seq !== reqSeq) return;
+      suggestions = (res || []).filter(s => s.placePrediction).slice(0, 5);
+      renderList();
+    } catch (e) {
+      if (seq === reqSeq) closeList();
+      console.warn("Autocomplete failed", e);
+    }
+  }
+
+  function renderList() {
+    list.innerHTML = "";
+    activeIdx = -1;
+    if (!suggestions.length) { closeList(); return; }
+    suggestions.forEach((s, i) => {
+      const p = s.placePrediction;
+      const li = document.createElement("li");
+      li.id = `addr-opt-${i}`;
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", "false");
+      const main = document.createElement("span"); main.className = "main";
+      main.textContent = p.mainText ? p.mainText.text : p.text.text;
+      const second = document.createElement("span"); second.className = "second";
+      second.textContent = p.secondaryText ? p.secondaryText.text : "";
+      li.append(main, second);
+      li.addEventListener("mousedown", (e) => e.preventDefault()); // keep focus in the input
+      li.addEventListener("click", () => pick(i));
+      list.appendChild(li);
+    });
+    const attrib = document.createElement("li");
+    attrib.className = "attrib"; attrib.setAttribute("aria-hidden", "true");
+    attrib.textContent = "powered by Google";
+    list.appendChild(attrib);
+    list.hidden = false;
+    els.address.setAttribute("aria-expanded", "true");
+  }
+
+  function closeList() {
+    list.hidden = true;
+    list.innerHTML = "";
+    suggestions = []; activeIdx = -1;
+    els.address.setAttribute("aria-expanded", "false");
+    els.address.removeAttribute("aria-activedescendant");
+  }
+
+  function setActive(i) {
+    const opts = list.querySelectorAll('li[role="option"]');
+    if (!opts.length) return;
+    activeIdx = (i + opts.length) % opts.length;
+    opts.forEach((o, j) => o.setAttribute("aria-selected", j === activeIdx ? "true" : "false"));
+    els.address.setAttribute("aria-activedescendant", opts[activeIdx].id);
+  }
+
+  els.address.addEventListener("keydown", (e) => {
+    if (list.hidden) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); setActive(activeIdx + 1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActive(activeIdx - 1); }
+    else if (e.key === "Enter" && activeIdx >= 0) { e.preventDefault(); pick(activeIdx); }
+    else if (e.key === "Escape") { closeList(); }
+  });
+  els.address.addEventListener("blur", () => {
+    setTimeout(closeList, 150);
+    state.touched.add("address");
+    render();
+  });
+
+  function streetCity(place, fallback) {
+    const comps = place.addressComponents || [];
+    const get = (type, short) => { const c = comps.find(c => c.types.includes(type)); return c ? (short ? c.shortText : c.longText) : ""; };
+    let street = [get("street_number"), get("route", true)].filter(Boolean).join(" ");
+    const unit = get("subpremise");
+    if (street && unit) street += ` #${unit}`;
+    if (!street) street = fallback;
+    const city = get("locality") || get("sublocality") || get("postal_town") || get("neighborhood");
+    return city ? `${street}, ${city}` : street;
+  }
+
+  async function pick(i) {
+    const p = suggestions[i] && suggestions[i].placePrediction;
+    if (!p) return;
+    const fallback = p.mainText ? p.mainText.text : p.text.text;
+    closeList();
+    els.address.value = p.text.text;
+    try {
+      const place = p.toPlace(); // carries the session token, closing out the session
+      await place.fetchFields({ fields: ["addressComponents", "formattedAddress"] });
+      els.address.value = streetCity(place, fallback);
+      state.addressPicked = true;
+    } catch (e) {
+      console.warn("Place details failed", e);
+    } finally {
+      sessionToken = null; // next search starts a new session
+      state.hasContent = hasContent();
+      save();
+      render();
+    }
+  }
+
+  /* ---------- init ---------- */
+  CONFIG.INSPECTORS.forEach(n => { const o = document.createElement("option"); o.value = n; o.textContent = n; els.inspector.appendChild(o); });
+
+  const saved = load(STORE_KEY);
+  if (saved) {
+    writeForm(saved);
+    state.addressPicked = !!saved.addressPicked;
+    state.warrantyManual = !!saved.warrantyManual;
+    state.startedOn = saved.startedOn || todayISO();
+    state.hasContent = hasContent();
+  } else {
+    writeForm({});
+  }
+  save();
+  render();
+  loadGoogle();
+})();
+</script>
+</body>
+</html>
