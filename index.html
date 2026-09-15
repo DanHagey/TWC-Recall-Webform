@@ -3,24 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#ECEEEA" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#15191C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F3EEE6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#2A2622" media="(prefers-color-scheme: dark)">
 <title>TWC Recall Log</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #ECEEEA;
-    --surface: #FFFFFF;
-    --ink: #1A1F24;
-    --muted: #56606A;
-    --line: #C3C9CE;
-    --accent: #1E6B45;
-    --accent-ink: #FFFFFF;
-    --warn: #8A5300;
-    --warn-bg: #FFF3DC;
-    --focus: #1E6B45;
+    /* AngleWorks Paper (aw-exclusions theme.ts) */
+    --bg: #F3EEE6;       /* paper.canvas */
+    --surface: #FBF8F2;  /* paper.card */
+    --deep: #E8E1D6;     /* paper.deep */
+    --ink: #1C1917;      /* paper.ink */
+    --muted: #57534E;    /* paper.inkSoft */
+    --line: #D9D2C7;     /* paper.rule */
+    --accent: #B86A2D;   /* paper.ochre */
+    --accent-ink: #FBF8F2;
+    --warn: #8F4F1F;
+    --warn-bg: #F5E6D8;
+    --focus: #B86A2D;
     --radius: 10px;
     --font: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-head: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
@@ -28,16 +30,17 @@
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #15191C;
-      --surface: #1F2428;
-      --ink: #E9ECEE;
-      --muted: #9AA4AD;
-      --line: #3A4248;
-      --accent: #4FB482;
-      --accent-ink: #0C1A12;
-      --warn: #F2B45A;
-      --warn-bg: #33270F;
-      --focus: #4FB482;
+      --bg: #2A2622;
+      --surface: #352F29;
+      --deep: #3D3832;
+      --ink: #F3EEE6;
+      --muted: #A8A29E;
+      --line: #4A4540;
+      --accent: #C98247;
+      --accent-ink: #1C1917;
+      --warn: #E8B88A;
+      --warn-bg: #3D2E22;
+      --focus: #C98247;
     }
   }
 
@@ -73,7 +76,7 @@
     font: inherit; font-size: 15px; font-weight: 600;
     color: var(--ink); background: transparent;
     border: 1.5px solid var(--line); border-radius: var(--radius);
-    padding: 8px 12px; min-height: 40px; cursor: pointer; white-space: nowrap;
+    padding: 8px 12px; min-height: 44px; cursor: pointer; white-space: nowrap;
   }
 
   main { max-width: 560px; margin: 0 auto; padding: 8px 16px 24px; }
@@ -120,7 +123,7 @@
   .seg input { position: absolute; opacity: 0; pointer-events: none; }
   .seg label { display: block; text-align: center; padding: 13px 8px; font-weight: 600; cursor: pointer; user-select: none; }
   .seg label + input + label { border-left: 1.5px solid var(--line); }
-  .seg input:checked + label { background: var(--ink); color: var(--surface); }
+  .seg input:checked + label { background: var(--accent); color: var(--accent-ink); }
   .seg input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: -3px; }
 
   /* Address suggestions */
@@ -134,7 +137,7 @@
   .suggest li { padding: 10px 12px; cursor: pointer; line-height: 1.25; }
   .suggest li .main { display: block; font-weight: 600; }
   .suggest li .second { display: block; color: var(--muted); font-size: 14px; }
-  .suggest li[aria-selected="true"], .suggest li:hover { background: var(--bg); }
+  .suggest li[aria-selected="true"], .suggest li:hover { background: var(--deep); }
   .suggest .attrib { cursor: default; font-size: 12px; color: var(--muted); text-align: right; padding: 4px 12px 6px; }
   .suggest .attrib:hover { background: none; }
 
@@ -316,6 +319,13 @@
   'use strict';
 
   /* ===================== SETTINGS ===================== */
+  /*
+    GCP — Application restriction: HTTP referrers (Websites). Must include https://:
+      https://danhagey.github.io/TWC-Recall-Webform/*
+      https://danhagey.github.io/TWC-Recall-Webform/
+    APIs: Maps JavaScript API + Places API (New).
+    Optional local testing only: http://localhost:*
+  */
   const CONFIG = {
     // Google Maps Platform key. Restrict it by website + API in Google Cloud.
     GOOGLE_API_KEY: "AIzaSyDlU1GQlaON0xmlZJqbfZJQg6sxywmu_FM",
@@ -637,24 +647,46 @@
   const addrHint = $("addrHint");
   const TOKEN_MAX_AGE = 3 * 60 * 1000; // start a fresh session if one sits idle this long
 
-  function placesOff(msg) {
+  const ADDR_HINT_OK = "Pick a suggestion to fill in street and city.";
+
+  function setAddrHint(msg, isError) {
+    addrHint.textContent = msg;
+    addrHint.classList.toggle("hint", !isError);
+    addrHint.classList.toggle("warn", !!isError);
+  }
+
+  function placesOff(msg, isError = true) {
     places = null;
     closeList();
-    addrHint.textContent = msg || "Address suggestions are off. Type street, city.";
+    setAddrHint(msg || "Address suggestions are off. Type street, city.", isError);
   }
 
   function loadGoogle() {
     const key = CONFIG.GOOGLE_API_KEY;
-    if (!key || key.startsWith("PASTE_")) { placesOff("Address suggestions are off (no API key yet). Type street, city."); return; }
-    window.gm_authFailure = () => placesOff("Address suggestions are off: Google rejected the API key. Type street, city.");
+    if (!key || key.startsWith("PASTE_")) {
+      placesOff("Address suggestions are off (no API key yet). Type street, city.", true);
+      return;
+    }
+    window.gm_authFailure = () => {
+      console.warn("Google Maps gm_authFailure — check API key restrictions and HTTP referrers (https:// required).");
+      placesOff("Address suggestions blocked (API key / referrer). Type street, city.", true);
+    };
     window.__twcPlacesReady = async () => {
-      try { places = await google.maps.importLibrary("places"); }
-      catch (e) { placesOff(); }
+      try {
+        places = await google.maps.importLibrary("places");
+        setAddrHint(ADDR_HINT_OK, false);
+      } catch (e) {
+        console.warn("Places importLibrary failed", e);
+        placesOff("Address suggestions blocked (API key / referrer). Type street, city.", true);
+      }
     };
     const s = document.createElement("script");
     s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&loading=async&callback=__twcPlacesReady`;
     s.async = true;
-    s.onerror = () => placesOff("Address suggestions couldn't load. Type street, city.");
+    s.onerror = () => {
+      console.warn("Google Maps script failed to load");
+      placesOff("Address suggestions couldn't load (network or key). Type street, city.", true);
+    };
     document.head.appendChild(s);
   }
 
@@ -686,10 +718,14 @@
         region: "us"
       });
       if (seq !== reqSeq) return;
+      setAddrHint(ADDR_HINT_OK, false);
       suggestions = (res || []).filter(s => s.placePrediction).slice(0, 5);
       renderList();
     } catch (e) {
-      if (seq === reqSeq) closeList();
+      if (seq === reqSeq) {
+        closeList();
+        setAddrHint("Address suggestions blocked (API key / referrer). Type street, city.", true);
+      }
       console.warn("Autocomplete failed", e);
     }
   }
