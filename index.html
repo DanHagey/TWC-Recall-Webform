@@ -289,7 +289,7 @@
 <div class="action">
   <div class="action-inner">
     <button type="button" class="btn-primary" id="copyBtn">Copy &amp; open Slack</button>
-    <p class="hint">Paste into #recalls (labels in italics), add photos, then send.</p>
+    <p class="hint">Paste into #recalls (labels paste styled for Slack), add photos, then send.</p>
   </div>
 </div>
 
@@ -473,16 +473,35 @@
   /* ---------- message ---------- */
   function oneLine(s) { return s.trim().replace(/\s*\n+\s*/g, " "); }
 
+  /** Mathematical Italic for plain-text Slack paste (iOS ignores HTML / mrkdwn). */
+  function toUnicodeItalic(str) {
+    let out = "";
+    for (const ch of str) {
+      const cp = ch.codePointAt(0);
+      if (cp >= 0x41 && cp <= 0x5a) {
+        out += String.fromCodePoint(0x1d434 + (cp - 0x41));
+      } else if (cp >= 0x61 && cp <= 0x7a) {
+        out += ch === "h" ? "\u210e" : String.fromCodePoint(0x1d44e + (cp - 0x61));
+      } else {
+        out += ch;
+      }
+    }
+    return out;
+  }
+
+  function italicLabel(label) { return toUnicodeItalic(label); }
+
   function buildMessage(f) {
     const notes = oneLine(f.notes);
     const twc = f.twcError ? (notes ? `${f.twcError} — ${notes}` : f.twcError) : "";
+    const job = f.job.trim().replace(/^#\s*/, "");
     return [
-      `*Date:* ${fmtShort(f.date)} | *Address:* ${f.address.trim()}`,
-      `*Original Job #:* ${f.job.trim().replace(/^#\s*/, "")}`,
-      `*In Warranty? (Y/N):* ${f.warranty}`,
-      `*Inspector responding:* ${f.inspector}`,
-      `*Reason for recall:* ${oneLine(f.reason)}`,
-      `*TWC Error? (Y/N + notes):* ${twc}`
+      `${italicLabel("Date:")} ${fmtShort(f.date)} | ${italicLabel("Address:")} ${f.address.trim()}`,
+      `${italicLabel("Original Job #:")} ${job}`,
+      `${italicLabel("In Warranty? (Y/N):")} ${f.warranty}`,
+      `${italicLabel("Inspector responding:")} ${f.inspector}`,
+      `${italicLabel("Reason for recall:")} ${oneLine(f.reason)}`,
+      `${italicLabel("TWC Error? (Y/N + notes):")} ${twc}`
     ].join("\n");
   }
 
@@ -535,9 +554,8 @@
       els[k].setAttribute("aria-invalid", missKeys.includes(k) || (state.attempted && w[k]) ? "true" : "false");
     });
 
-    // preview
-    const html = esc(buildMessage(f)).replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>");
-    $("preview").innerHTML = html;
+    // preview (matches plain-text clipboard)
+    $("preview").textContent = buildMessage(f);
 
     // stale banner
     const stale = state.hasContent && state.startedOn !== todayISO();
@@ -639,7 +657,7 @@
       $("manualText").select();
       return;
     }
-    showToast(`Copied (labels should paste in italics). Paste into #recalls, add photos, then send. <a href="${esc(webSlackUrl())}" target="_blank" rel="noopener">Open #recalls</a>`);
+    showToast(`Copied (labels styled for Slack). Paste into #recalls, add photos, then send. <a href="${esc(webSlackUrl())}" target="_blank" rel="noopener">Open #recalls</a>`);
     const url = slackUrl();
     if (isMobile) {
       window.location.href = url;
