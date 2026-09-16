@@ -339,8 +339,8 @@
     WARRANTY_YEARS: 2,
     OLD_DATE_DAYS: 45,                         // warn if recall date is older than this
 
-    // Bias address suggestions toward the Sacramento region (~60 km radius)
-    LOCATION_BIAS: { center: { lat: 38.65, lng: -121.25 }, radius: 60000 }
+    // Bias address suggestions toward the Sacramento region (~50 km; Places API max circle radius)
+    LOCATION_BIAS: { center: { lat: 38.65, lng: -121.25 }, radius: 50000 }
   };
   /* ==================================================== */
 
@@ -722,11 +722,19 @@
       suggestions = (res || []).filter(s => s.placePrediction).slice(0, 5);
       renderList();
     } catch (e) {
+      console.warn("Autocomplete failed", e);
       if (seq === reqSeq) {
         closeList();
-        setAddrHint("Address suggestions blocked (API key / referrer). Type street, city.", true);
+        const msg = (e && (e.message || String(e))) || "";
+        const lower = msg.toLowerCase();
+        let hint;
+        if (lower.includes("radius") || lower.includes("invalid circle")) {
+          hint = "Address suggestions misconfigured (location bias). Try again or type street, city.";
+        } else {
+          hint = "Address suggestions failed. Type street, city.";
+        }
+        setAddrHint(hint, true);
       }
-      console.warn("Autocomplete failed", e);
     }
   }
 
