@@ -289,7 +289,7 @@
 <div class="action">
   <div class="action-inner">
     <button type="button" class="btn-primary" id="copyBtn">Copy &amp; open Slack</button>
-    <p class="hint">Paste into #recalls, add photos, then send.</p>
+    <p class="hint">Paste into #recalls (labels in italics), add photos, then send.</p>
   </div>
 </div>
 
@@ -486,6 +486,24 @@
     ].join("\n");
   }
 
+  function labelVal(label, value) {
+    return `<em>${esc(label)}</em> ${esc(value)}`;
+  }
+
+  function buildMessageHtml(f) {
+    const notes = oneLine(f.notes);
+    const twc = f.twcError ? (notes ? `${f.twcError} — ${notes}` : f.twcError) : "";
+    const job = f.job.trim().replace(/^#\s*/, "");
+    return [
+      `<div>${labelVal("Date:", fmtShort(f.date))} | ${labelVal("Address:", f.address.trim())}</div>`,
+      `<div>${labelVal("Original Job #:", job)}</div>`,
+      `<div>${labelVal("In Warranty? (Y/N):", f.warranty)}</div>`,
+      `<div>${labelVal("Inspector responding:", f.inspector)}</div>`,
+      `<div>${labelVal("Reason for recall:", oneLine(f.reason))}</div>`,
+      `<div>${labelVal("TWC Error? (Y/N + notes):", twc)}</div>`
+    ].join("");
+  }
+
   function esc(s) { return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
   /* ---------- render ---------- */
@@ -575,15 +593,26 @@
     return webSlackUrl();
   }
 
-  async function copyText(text) {
+  async function copyText(plain, html) {
     try {
-      if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+      if (navigator.clipboard && window.isSecureContext) {
+        if (html && typeof ClipboardItem !== "undefined" && navigator.clipboard.write) {
+          const item = new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([plain], { type: "text/plain" })
+          });
+          await navigator.clipboard.write([item]);
+          return true;
+        }
+        await navigator.clipboard.writeText(plain);
+        return true;
+      }
     } catch (e) { /* fall through */ }
     const ta = document.createElement("textarea");
-    ta.value = text; ta.setAttribute("readonly", "");
+    ta.value = plain; ta.setAttribute("readonly", "");
     ta.style.position = "fixed"; ta.style.top = "0"; ta.style.opacity = "0";
     document.body.appendChild(ta);
-    ta.select(); ta.setSelectionRange(0, text.length);
+    ta.select(); ta.setSelectionRange(0, plain.length);
     let ok = false;
     try { ok = document.execCommand("copy"); } catch (e) {}
     ta.remove();
@@ -599,8 +628,10 @@
   }
 
   async function doCopy() {
-    const text = buildMessage(readForm());
-    const ok = await copyText(text);
+    const f = readForm();
+    const text = buildMessage(f);
+    const html = buildMessageHtml(f);
+    const ok = await copyText(text, html);
     if (!ok) {
       $("manualText").value = text;
       $("manualOpen").href = webSlackUrl();
@@ -608,7 +639,7 @@
       $("manualText").select();
       return;
     }
-    showToast(`Copied. Paste into #recalls, add photos, then send. <a href="${esc(webSlackUrl())}" target="_blank" rel="noopener">Open #recalls</a>`);
+    showToast(`Copied (labels should paste in italics). Paste into #recalls, add photos, then send. <a href="${esc(webSlackUrl())}" target="_blank" rel="noopener">Open #recalls</a>`);
     const url = slackUrl();
     if (isMobile) {
       window.location.href = url;
